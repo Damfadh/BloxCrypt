@@ -7,6 +7,7 @@ local Players      = game:GetService("Players")
 local UIS          = game:GetService("UserInputService")
 local TextService  = game:GetService("TextService")
 local LocalPlayer  = Players.LocalPlayer
+if not LocalPlayer then return end  -- Guard: hanya berjalan di client
 local PlayerGui    = LocalPlayer:WaitForChild("PlayerGui")
 
 -- Hapus GUI lama jika ada
@@ -477,6 +478,8 @@ local function createNode(inst, depth)
 	Wrap.Size = UDim2.new(1, 0, 0, 0)
 	Wrap.BackgroundTransparency = 1
 	Wrap.LayoutOrder = order
+	local wrapLayout = Instance.new("UIListLayout", Wrap)
+	wrapLayout.SortOrder = Enum.SortOrder.LayoutOrder
 
 	local Row = Instance.new("Frame")
 	Row.Size = UDim2.new(1, 0, 0, C.ROW_HEIGHT)
@@ -533,8 +536,10 @@ local function createNode(inst, depth)
 				for idx, child in ipairs(ch3) do
 					if idx % 40 == 0 then task.wait() end
 					if not expanded then break end
-					local childNode = createNode(child, depth + 1)
-					childNode.Parent = ChildWrap
+					local ok2, childNode = pcall(function() return createNode(child, depth + 1) end)
+					if ok2 and childNode then
+						childNode.Parent = ChildWrap
+					end
 				end
 			end
 		end)
@@ -628,12 +633,21 @@ buildTree = function(rootInst)
 	local ok, children = pcall(function() return rootInst:GetChildren() end)
 	if ok then
 		task.defer(function()
+			local failCount = 0
 			for idx, child in ipairs(children) do
 				if idx % 50 == 0 then task.wait() end
-				local node = createNode(child, 0)
-				node.Parent = TreeScroll
+				local ok2, node = pcall(function() return createNode(child, 0) end)
+				if ok2 and node then
+					node.Parent = TreeScroll
+				else
+					failCount += 1
+				end
 			end
-			setStatus("✅ Berhasil memuat " .. #children .. " objek di root.")
+			local msg = "✅ Berhasil memuat " .. #children .. " objek di root."
+			if failCount > 0 then
+				msg = msg .. " (" .. failCount .. " gagal dimuat)"
+			end
+			setStatus(msg)
 		end)
 	end
 end
