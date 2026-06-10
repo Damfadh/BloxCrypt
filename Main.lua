@@ -1,5 +1,6 @@
 --[[=================================================================
-	BloxCrypt Premium Framework - Integrated via GitHub Loadstring
+	BloxCrypt Premium Framework - Core Loop Controller
+	Optimized Anti-Lag & Force Close Protected
 =================================================================]]
 
 local Players = game:GetService("Players")
@@ -12,17 +13,16 @@ if targetGui:FindFirstChild("ResHUB_Premium") then targetGui.ResHUB_Premium:Dest
 local KUNCI_PREMIUM = "123"
 local _G_AccentColor = Color3.fromRGB(99, 102, 241)
 
--- 🔄 LINK RAW GITHUB STANDAR (DI-PERBAIKI)
 local GITHUB_RADAR_URL = "https://raw.githubusercontent.com/Damfadh/BloxCrypt/main/Radar.lua"
 local Radar = nil 
 
--- UI Container Setup
+-- Setup Base ScreenGui Container
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "ResHUB_Premium"
 ScreenGui.Parent = targetGui
 ScreenGui.ResetOnSpawn = false
 
--- Fitur Drag Local
+-- Fitur Drag Drop Local Frame
 local function MakeDraggable(frame, isMinimizeButton, mainFrameRef)
     local dragging, dragStart, startPos, hasMoved = false, nil, nil, false
     frame.InputBegan:Connect(function(input)
@@ -46,7 +46,7 @@ local function MakeDraggable(frame, isMinimizeButton, mainFrameRef)
     end)
 end
 
--- Setup Interface Login (Key System)
+-- Key Authentication Frame System
 local KeyFrame = Instance.new("Frame", ScreenGui)
 KeyFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 22)
 KeyFrame.Position = UDim2.new(0.5, -150, 0.5, -80)
@@ -71,7 +71,7 @@ VerifyBtn.Font = Enum.Font.GothamBold; VerifyBtn.Text = "VERIFY KEY"; VerifyBtn.
 Instance.new("UICorner", VerifyBtn).CornerRadius = UDim.new(0, 6)
 
 local function BukaWindowUtama()
-    -- 📡 LOAD modul radar dari GitHub Anda
+    -- 📡 LOAD modul radar dari GitHub secara aman
     local success, result = pcall(function()
         return loadstring(game:HttpGet(GITHUB_RADAR_URL))()
     end)
@@ -79,7 +79,7 @@ local function BukaWindowUtama()
     if success and type(result) == "table" then
         Radar = result
     else
-        warn("❌ Gagal mengambil Radar.lua dari GitHub: " .. tostring(result))
+        warn("❌ Gagal Mengambil Radar.lua dari GitHub: " .. tostring(result))
         return
     end
 
@@ -133,7 +133,6 @@ local function BukaWindowUtama()
         table.insert(Tabs, {Btn = TabBtn, Page = Page, Stroke = TabStroke})
         local Elements = {}
         
-        -- 🛠️ REVISI FIX: Perbaikan kerangka pembuatan Button callback agar stabil
         function Elements.AddButton(text, callback)
             local btn = Instance.new("TextButton", Page)
             btn.Size = UDim2.new(1, -6, 0, 32); btn.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
@@ -142,7 +141,7 @@ local function BukaWindowUtama()
             Instance.new("UIStroke", btn).Color = Color3.fromRGB(45, 45, 50)
             
             if callback then
-                btn.MouseButton1Down:Connect(function() task.spawn(callback, btn) end)
+                btn.MouseButton1Down:Connect(function() pcall(callback, btn) end)
             end
             return btn
         end
@@ -159,7 +158,7 @@ local function BukaWindowUtama()
                 else btn.BackgroundColor3 = Color3.fromRGB(180, 50, 50) btn.Text = text .. " [OFF]" end
             end
             btn.MouseButton1Down:Connect(function()
-                state = not state updateStyle() task.spawn(callback, state)
+                state = not state updateStyle() pcall(callback, state)
             end)
             updateStyle()
             return btn
@@ -204,7 +203,6 @@ local function BukaWindowUtama()
         Radar.isForceFaceEnabled = val
     end)
 
-    -- Tiruan dropdown mode scan (Sekarang Menggunakan Callback bawaan AddButton yang benar)
     local scanModesList = {"Humanoid", "Universal"}
     local currentIdx = 1
     RadarTab.AddButton("🔍 Scan Mode: Humanoid (Default)", function(buttonInstance)
@@ -215,7 +213,6 @@ local function BukaWindowUtama()
         Radar.SetScanMode(chosenMode)
     end)
 
-    -- Custom Tween Speed Button
     local tSpeed = 60
     RadarTab.AddButton("⚡ Tween Speed: 60 studs/s (Klik +15)", function(buttonInstance)
         tSpeed = tSpeed + 15
@@ -224,11 +221,21 @@ local function BukaWindowUtama()
         Radar.SetSpeed(tSpeed)
     end)
 
-    -- Sync Loop Teks Target
+    -- 🛡️ CONTROL LOOP MASTER (Dipusatkan di Main untuk Mencegah Force Close)
+    RunService.RenderStepped:Connect(function()
+        if Radar and Radar.isDetectionEnabled then
+            pcall(Radar.UpdateForceFace)
+        end
+    end)
+
     task.spawn(function()
-        while task.wait(0.2) do
+        while task.wait(0.1) do
             if not ScreenGui or not ScreenGui.Parent then break end
             if Radar and Radar.isDetectionEnabled then
+                -- Jalankan fungsi pencarian engine radar secara aman
+                pcall(Radar.ScanAndExecute)
+                
+                -- Update Status Teks Target UI
                 local currentTarget = Radar.GetActiveTargetName()
                 if currentTarget and currentTarget ~= "None" then
                     RadarStatus.Text = "🎯 Target: " .. currentTarget
